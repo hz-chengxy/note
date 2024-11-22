@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+  <script>
+
+    window.decodeURIComponent(window.escape(window.atob('string')))
+    function Qs (data = {}) { // 生成get请求url
+      let keys = Object.keys(data)
+      let str = keys.reduce((value, item) => {
+        return value + `${item}=${data[item]}&`
+      }, '')
+      return str.slice(0, str.length - 1)
+    }
+
+    function processErrorInfo (res) {
+      const reader = new FileReader()
+      reader.readAsText(res, 'UTF-8')
+      return new Promise((resolve) => {
+        const content = e.target.result
+        try {
+          /* 如果下载接口报错了，返回的不是文档流，而是JSON格式的，或者字符串等，则这里就会在try里一直运行下去；
+          但如果接口没报错，返回的是文档流，则JSON.parse便会报错，进入到catch，resolve个true出去。 */
+          const resError = JSON.parse(content)
+          if (!resError.success) {
+            this.$alert(resError.msg)
+          }
+          if (resError.code == 401) {} // 这里可以判断是否登陆过期，或者其他逻辑，酌情加
+          resolve(resError) 
+        } catch (error) {
+          resolve(true)
+        }
+      })
+    }
+
+    function downloadFile (fileName, blob, flag) {
+      if (!flag) {
+        blob = new Blob([blob], {type: 'application/octet-stream;charset=UTF-8'})
+      }
+      if (window.navigator && window.navigator.msSaveBlob) {
+        window.navigator.msSaveBlob(blob, fileName)
+      } else {
+        const objURL = URL.createObjectURL(blob)
+        const aTag = document.createElement('a')
+        aTag.href = objURL
+        aTag.download = fileName
+        aTag.click()
+        URL.revokeObjectURL(objURL)
+      }
+      return true
+    }
+
+    function xhrDownload (method = 'get', url, data = {}, options = {}) {
+      const xhr = new XMLHttpRequest()
+      const baseURL = process.env.NODE_ENV === 'development' ? '/dev/api' : ''
+      url = baseURL + url
+      if (method.toLocaleLowerCase() === 'get' && Object.keys(data).length) {
+        url = url + '?' + Qs(data)
+      }
+      xhr.open(method, url, true)
+      xhr.setRequestHeader('TOKEN', localStorage.getItem('TOKEN') || sessionStorage.getItem('TOKEN')) // 看请求是否需要加TOKEN
+      xhr.setRequestHeader('responseType', 'blob')
+      if (options['Content-type']) {
+        xhr.setRequestHeader('Content-type', options['Content-type'])
+      }
+      xhr.responseType = 'blob'
+      return new Promise((resolve, reject) => {
+        xhr.onload = async function (e) {
+          if (xhr.status == 401) {
+            this.$router.push('/login') // 一般情况下401为登陆超时状态，直接跳转登录页
+            return
+          }
+          if (xhr.status == 500) {
+            this.$alert(err) // 500为常规报错
+            return
+          }
+          const res = xhr.response
+          const resData = await processErrorInfo(res)
+          if (resData === true) {
+            // 从请求头获取下载文件的文件名，一般从content-info 或 content-disposition 
+            const fileName = (xhr.getResponseHeader('content-disposition').split('filename=')[1])
+            downloadFile(fileName, res, true)
+            resolve(true)
+          } else {
+            reject(resData)
+          }
+        }
+        if (method.toLocaleLowerCase() === 'post') {
+          xhr.send(JSON.stringify(data))
+        } else {
+          xhr.send()
+        }
+      })
+    }
+  </script>
+</html>

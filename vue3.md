@@ -1,3 +1,5 @@
+# vue3里model的使用
+
 # vue3定义属性的两种方式
 reactive定义的属性是一个对象，ref主要是一个值，包括一段字符串或者一个数值。据官方解释，ref的本质也是reactive，为了方便开发者直接调用一层ref，不通过调用reactive对象中的某个值，方便观察变化。
 另外，reactive在js里调用不需要加value，而直接调用定义过得ref，需要加value。但在template也直接调用即可，不需要写value。

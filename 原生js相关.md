@@ -847,9 +847,8 @@ console.log(a); // 输出数组 a
 console.log(b); // 输出数组 b
 ```
 
-# ipv6的补全，方便校验无论ipv4、ipv6与网关，ip范围组合的合法性
-* 数据结构：{start_ip: '', end_ip: '', gateway: ''}
-因为要校验起始ip与结尾ip是否合法，和网关与ip的合法性，又牵扯到ipv6。故第一步，搞定ipv6的补全逻辑，有些ipv6是缩写，为了翻遍比较，全部补全为通用格式。
+# IP的比较
+## IPv6地址补全，方便IP比较
 ```js
 // 补全ipv6
 expandIPv6 (addrIPv6) {
@@ -887,4 +886,26 @@ expandIPv6 (addrIPv6) {
 }
 ```
 
-* 补全了ipv6后，保证了ipv6地址的一致性，
+## ip转二进制，方便比较
+```js
+// ip转二进制
+ipToBinary (ip) {
+  if (ip.includes(':')) {
+    const blocks = ip.split(':')
+    const binaryBlocks = blocks.map(block => parseInt(block, 16).toString(2).padStart(16. '0'))
+    return binaryBlocks.join('')
+  } else {
+    return ip.split('.').map(octet => ('00000000' + parseInt(octet).toString(2)).slice(-8)).join('')
+  }
+}
+```
+
+## 校验ip是否在某个范围内
+```js
+ipInRange (ip, startIp, endIp) {
+  const ipBin = this.ipToBinary(ip)
+  const startIpBin = this.ipToBinary(startIp)
+  const endIpBin = this.ipToBinary(endIp)
+  console.log('是否在起始地址范围：', ipBin >= startIpBin && ipBin <= endIpBin)
+}
+```

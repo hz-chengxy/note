@@ -233,7 +233,7 @@ watch: {
     }
 }
 methods: {
-    // 第0行#fff 第一行#fafafa，以此循环。且如果有class
+    // 第0行#fff 第一行#fafafa，以此循环。且如果有classStripe，加个span-row，为第一列即合并列的样式做准备
     tabRowClassName ({row, rowIndex}) {
         if (rowIndex % 2 === 0) {
             return row.classStripe ? 'span-row fff' : 'fff'
@@ -298,13 +298,16 @@ methods: {
 </script>
 
 <style lang="scss" scope>
+// 第一列先加个边框
 :deep(.border-cell){
     border-left: 1px solid #ebeef5 !important;
     border-right: 1px solid #ebeef5 !important;
 }
+// 先统一加 #fafafa，实现基础的斑马纹
 :deep(.fafafa){
     background-color: #fafafa;
 }
+// 再来单独处理第一行的，默认先给#fff，有span-row的则为#fafafa，单独实现合并列的斑马纹
 :deep(.border-cell){
     background-color: #fff;
 }

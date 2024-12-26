@@ -463,6 +463,61 @@ const { proxy } = getCurrentInstance() as any;
 proxy.$axios
 ```
 
+# vue3 $slot用法
+## 配置component直接渲染
+想通过$slot实现插槽名称、数量不定，编程式获取所有插槽的内容，可以通过$slot获取到所有的内容。在子组件中，$slots.slotName() slotName这是一个方法 返回的是数组，基本包含了所有的参数，甚至配合component就可以直接渲染
+```vue
+<!-- 父组件，传递一个search的插槽 -->
+<template  #search>
+  <el-input v-model="searchForm.name" label="name" ></el-input>
+  <el-input v-model="searchForm.Activity" label="Activity" ></el-input>
+  <el-input v-model="searchForm.age" label="age" ></el-input>
+</template>
+
+<!-- 子组件通过执行$slot.search()，再配合component就可以直接渲染 -->
+<template>
+  <el-col :span="defaultSpan" v-for="(item, index) in $slots.search()" :key="index">
+    <el-form-item :label="item.props?.label">
+      <component :is="item"></component>
+    </el-form-item>
+  </el-col>
+</template>
+```
+## 更加灵活的，获取参数等信息，自由渲染内容
+```vue
+<!-- 父组件传递一个插槽，这个插槽是有传参的，那么在子组件中执行$slot['append-page-left']方法时，就也要带着这个参数 -->
+<template v-slot:append-page-left="{selected}">
+  <el-button size="mini" type="primary" @click="fn" buttonLabel="按钮文字">按钮文字</el-button>
+  <el-button size="mini" @click="fn">按钮文字</el-button>
+  <el-button size="mini" @click="fn">按钮文字</el-button>
+</template>
+```
+
+```vue
+<!-- 如何获取这些button呢？ -->
+<script>
+const obtainSlotsProp() => {
+  let list = []
+  const appendLeft = this.$slot['append-page-left']
+  if (typeof appendLeft === 'function') {
+    console.log(appendLeft({selected: this.selected})) // 执行的时候要带上参数
+    list = appendLeft({selected: this.selected}).map(item => {
+      console.log(item) // item即为父组件中每个button，props中存着传进来的每个参数
+      /* 那么如何获取按钮中的按钮文字了，可以向第一个按钮一样，存在一个prop中，但这可能得一个一个页面的改，如果不想改动单个页面，可以继续仔细找找item的参数 */
+      console.log(item.children.default) // 这个default相当眼熟，也是一个方法，和$slot.slotName这个方法简直太过于相似了！那么执行看看
+      console.log(item.children.default()[0].children) // 他执行完之后，就可以找到children里，存了按钮的文字，也很形象，相当于el-button的子元素。
+      const text = item.children.default()[0].children
+      return ({
+        text,
+        prop: item.props
+      })
+    })
+  }
+  return list
+} 
+</script>
+```
+
 # vue3自定义hooks(分隔业务逻辑)
 ```js 在主组件中引入hooks,并向里传参(假设setup语法糖)
 import useForm from './useForm'

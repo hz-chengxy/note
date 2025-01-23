@@ -82,6 +82,16 @@ closeDialog () { // 关闭弹框
 }
 ```
 
+## Vue.observable
+* 该api主要是将不是响应式的数据添加上响应式。
+* 如你在全局注册了一个全局变量，该全局变量是个配置项。配置项呢，是由一个js文件直接默认模块化导出的。那么这个全局变量便不是一个响应式变量，watch、computed是监测不到变化的。
+* 即使`Vue.prototype.$config = config;` 挂在this上也不行。
+这时就需要拿observable注册一下。也只多了一步
+```js
+const configOb = Vue.observable(config)
+Vue.prototype.$config = configOb
+```
+
 # vue路由
 - router-view 路由插座
 - router-link 路由跳转 其中有几个属性 

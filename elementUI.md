@@ -220,7 +220,7 @@ this.$refs.form.validateField(validFields, (valid) => {
 <script>
 data () {
     return {
-        tableData: []
+        tableData: [], // 示例数据见行合并数据实例.txt
     }
 },
 watch: {

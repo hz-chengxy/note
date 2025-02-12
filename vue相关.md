@@ -92,6 +92,54 @@ const configOb = Vue.observable(config)
 Vue.prototype.$config = configOb
 ```
 
+在vue3中observable被移除了，可以直接用reactive添加响应式，详见vue3.mc
+
+## Vue.directive
+以下为el-select懒加载示例
+全局挂载自定义指令：
+```js
+Vue.directive('el-select-lazyloading', {
+  bind (el, binding) {
+    let SELECT_DOM = el.querySelector('.el-select-dropdown .el-select-dropdown__wrap')
+    SELECT_DOM.addEventListener('scroll', function () {
+      let condition = this.scrollHeight - this.scrollTop <= this.clientHeight
+      if (condition) {
+        binding.value()
+      }
+    })
+  }
+})
+// 全局挂载在vue3中有所变动，而且el-select中的下拉框是使用popper.js生成的，不在body中，无法直接获取。写法有一定变化，详见vue3.md - Vue.directive
+```
+
+在el-select中使用
+```vue
+<template>
+  <el-select v-el-select-lazyloading="lazyLoading" v-model="id">
+    <el-option v-for="item in idList"></el-option>
+  </el-select>
+</template>
+<script>
+mounted() {
+  this.page = 1
+  this.size = 10
+  this.total = 1
+  this.lazyLoading()
+}
+methods: {
+  lazyLoading () {
+    if (this.page > this.totol) return
+    this.$api.getList({page: this.page, size: this.size}).then(res => {
+      const data = res.data
+      this.total = data.total
+      this.idList.push(...data)
+      this.page++
+    })
+  }
+}
+</script>
+```
+
 # vue路由
 - router-view 路由插座
 - router-link 路由跳转 其中有几个属性 

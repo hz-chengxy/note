@@ -539,6 +539,84 @@ const useForm = (state) => {
 export default useForm
 ```
 
+# vue3 API
+## vue3全局变量添加响应式
+与vue2类似，在挂载全局变量的时候，不再用observable，直接用reactive
+```js
+import { reactive } from 'vue'
+
+const configOb = reactive(config)
+Vue.prototype.$config = configOb
+```
+
+## Vue.directive
+与vue2.md的示例差不多，也是el-select的懒加载。
+最好可以单独在src中建立一个directives文件夹
+```js src/directives/index.js
+export const lazyPlugin = {
+  install (app) {
+    app.directive('el-select-lazyloading', {
+      mounted (el, binding) {
+        let SELECT_DOM = document.querySelector('.event-select-poper-template .el-select-dropdown__wrap')
+        el.selectDomInfo = SELECT_DOM
+        el.selectScrollLoad = scrollHandle
+        SELECT_DOM.addEventListener('scroll', scrollHandle.bind(SELECT_DOM, binding))
+      },
+      beforeUnmount(el) {
+        if (el.selectScrollLoad) {
+          el.selectDomInfo.removeEventListener('scroll', el.selectScrollLoad)
+          delete el.selectDomInfo
+          delete el.selectScrollLoad
+        }
+      }
+    })
+  }
+}
+
+function scrollHandle (binding) {
+  let condition = this.scrollHeight - this.scrollTop <= this.clientHeight
+  if (condition) {
+    binding.value()
+  }
+}
+```
+
+```js
+//全局挂载
+import {lazyPlugin} from '#/directives/index'
+
+app.use(lazyPlugin) / Vue.use(lazyPlugin)
+```
+
+在el-select中使用
+```vue
+<template>
+  <!-- teleported加不加不影响，该属性是将下拉框插入body中 -->
+  <el-select v-el-select-lazyloading="lazyLoading" v-model="id" popper-class="event-select-poper-template" teleported>
+    <el-option v-for="item in idList"></el-option>
+  </el-select>
+</template>
+<script>
+mounted() {
+  this.page = 1
+  this.size = 10
+  this.total = 1
+  this.lazyLoading()
+}
+methods: {
+  lazyLoading () {
+    if (this.page > this.totol) return
+    this.$api.getList({page: this.page, size: this.size}).then(res => {
+      const data = res.data
+      this.total = data.total
+      this.idList.push(...data)
+      this.page++
+    })
+  }
+}
+</script>
+```
+
 # vue3中目前已知的ts写法
 ## 定义接口
 ```js

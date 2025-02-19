@@ -909,3 +909,12 @@ ipInRange (ip, startIp, endIp) {
   console.log('是否在起始地址范围：', ipBin >= startIpBin && ipBin <= endIpBin)
 }
 ```
+
+# window.AbortController
+AbortController 接口表示一个控制器对象，允许你根据需要中止一个或多个 Web 请求。可以终止fetch或axios（底层也是fetch）请求。
+业务场景：可在跳转404页的时候，终端所有请求，节省资源。
+```
+if (window.AbortController) {
+  new AbortController().abort()
+}
+```

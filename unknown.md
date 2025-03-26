@@ -175,6 +175,14 @@ import { XXX } from './a.js'
 // 导出模块 API
 export function a() {}
 export default function() {}
+
+// 有一种比较综合的写法，可以有默认导出和单独导出合并
+export { // 假设是react.js的文件，有以下两个方法需要导出
+  React as default,
+  Component
+}
+// 这样导出之后，便可以通过以下写法导入
+import React, {Component} from 'react'
 ```
 
 # 异步
@@ -182,7 +190,7 @@ export default function() {}
 * 并行：并行是微观概念，假设 CPU 中存在两个核心，那么我就可以同时完成任务 A、B。同时完成多个任务的情况就可以称之为并行。
 * Promise: then之后返回的都是一个Promise，如果then中使用了return，那么return的值会被Promise.resolve()包装。
 * async就是将函数返回值使用Promise.resolve()包裹了下，和then中处理返回值一样，并且await只能配套async。await将异步代码改造成了同步代码，如果多个异步代码没有依赖性却使用了await，这个样子线程阻塞,很耗费时间，会导致性能上的降低。Promise.all方法,可以将多个await变成并行的去await。
-* Date.now() === new Date().getTime() 返回true。
+* Date.now() === new Date().getTime() === +new Date() 返回true。
 
 ## Promise/A+规范
 * Promise的当前状态必须为：等待态(Pending)、执行态(Fulfilled,后来多为Resolve)、拒绝态(rejected)。
@@ -920,30 +928,37 @@ this.setState(preState => {
 * setState的第二个参数相当于vue的nextTick，指数据变化渲染完DOM后的数据情况，可以拿到最新的状态。
 * 受控组件中需要value绑定状态，之后通过onChange改变对应状态，达到vue中modal语法糖的效果。
 * 非受控组件需要在constructor中定义一些this.ipt = createRef(),然后在表单中用ref = this.ipt，之后就可以通过this.ipt获取该表单。
-* 渲染富文本：dangerouslySetInnerHTML
-```html
-<div dangerouslySetInnerHTML={{__html:data}}>
-// 这个data就是要渲染的富文本
-```
 
 ## 生命周期
-父组件render执行，字组件render也执行
-* initialization
-   * setup up props and state
-* Mounting阶段
+* initialization（初始化阶段，只会执行一次）
+   * setup up props and state （实际上就是constructor）
+* Mounting （挂载阶段，只会执行一次）
    * componentWillMount => render => componentDidMount (仅执行一次)
-* updation
-   * 针对props(组件外部的状态修改)的五个钩子： componentWillReceiveProps(nextProp) => shouldComponentUpdate(nextProps,nextState) => componentWillUpdate => render => componentDidUpdate
-   * 针对state(组件内部的状态修改)的四个钩子： shouldComponentUpdate => componentWillUpdate => render => componentDidUpdate（相当于少了第一个）
+* updation （更新阶段）
+  * props的相关钩子： componentWillReceiveProps(nextProps) => shouldComponentUpdate(nextProps, nextState) 返回true或者false => componentWillUpdate => render => componentDidUpdate
+    * componentWillReceiveProps的参数nextProps，代表了最新的props 
+    * shouldComponentUpdate 两个参数nextProps, nextState。代表了最新的props和最新的state
+  * state的相关钩子： shouldComponentUpdate => componentWillUpdate => render => componentDidUpdate (因为不需要接收props，所以只有后四个钩子)
+* unmounting (卸载阶段)
+  * componentWillUnmount
+
+父组件render执行，子组件render一定会执行：例如父组件中调了setState改了状态，触发了updation中render，即使改的状态与子组件无关，没有传给子组件，子组件也会触发生命周期，执行render等钩子。vue则不会，vue只会在父组件相关props更新时，才会重复渲染
 
 * getDerivedStateFromProps(nextProps,prevState) 根据props，生成新的state，mounte和update阶段均会触发的钩子，16.3版本后新出的。
 ```js
 static getDerivedStateFromProps(nextProps,prevState) {
-  if (nextProps.color === prevState.preColor) {
-    return null
-  } else { // 自动做一个merge操作
+  // 若nextProps.color === prevState.color判断，会有更新bug。
+  /* 
+    因为这个钩子触发频率过于频繁，自身的setState也会触发，外部props更新也会触发。所以导致，若内外部同时改内部的状态，可能存在问题。
+    比如： 外部更新了一次color后，若有一个内部更新color的需求时，setState触发了更新，但此时nextProps.color依然为上次外部更新的值，而此时prevState.color已经为内部更新后的值，两个值已经不相等了，则会走else中自动merge一次state的逻辑，导致这次内部更新color被再次替换，又改回了上一次外部更新的color值。
+    所以： 用prePropColor去存储一下上一次props中传下来的color的值，若相等，就不做merge。省的再把内部改的color给覆盖了。
+    这个钩子根据名字所探得的本意就是从prop更新内部的state，所以要尽可能避免内部更新导致的触发钩子。 
+  */
+  if (nextProps.color === prevState.prePropColor) {
+    return null // 不再merge
+  } else { // 会自动做一个merge操作
     color: nextProps.color,
-    preColor: nextProps.color, //额外存储一下上次渲染的color，因为这个钩子触发的阈值太低，所以为了防止自身做状态改变无法正常渲染，做了这么一步冗余操作。
+    prePropColor: nextProps.color, //额外存储一下上次渲染的color，因为这个钩子触发的阈值太低，所以为了防止自身做状态改变无法正常渲染，做了这么一步冗余操作。
   }
 }
 ```
@@ -986,8 +1001,8 @@ static getDerivedStateFromProps(nextProps,prevState) {
   * 简短回答： 为了防止出现失效的连接请求被服务端接收的情况，从而产生错误。
   * 例如：客户端发送A请求，网络连接超时，TCP的重传机制会再发送一个请求B，B顺利连接完成后，接受数据，释放了连接。然后这时A到达了服务端，那么此时服务器又以为要建立TCP连接 ，而进入ESTABLISHED状态。但是客户端已经CLOSE状态，那么就会导致服务器一直等待，造成浪费。
 * 断开连接的四次握手
-   * 若客户端认为数据发送完成，则需要向服务端发送连接释放请求。
-   * 服务端收到请求后，会告诉应用层释放TCP链接。然后发送ACK包(确认字符)，并进入CLOSE_WAIT状态，此时表明客户端到服务端的连接已经断开了，不再接受该客户端发送的数据了。但是TCP连接是双向的，所以服务端还可以向客户端发送数据。
+   * 若客户端认为数据发送完成，则需要向服务端发送连接释放请求FIN包，客户端进入FIN-WAIT-1阶段
+   * 服务端收到请求后，会告诉应用层释放TCP链接。然后发送ACK包(确认字符)，并进入CLOSE_WAIT状态，此时表明客户端到服务端的连接已经断开了，不再接受该客户端发送的数据了。客户端接收到ACK包后进入FIN-WAIT-2状态，但是TCP连接是双向的，所以服务端还可以向客户端发送数据。
    * 服务端此时如果还有未发送完的数据会继续发送，完毕后会向客户端发送连接释放请求。之后服务端会进入LAST_ACK状态。
    * 客户端收到释放请求后，会向服务端发送确认关闭应答，此时客户端进入TIME-WAIT 状态，该状态会持续 2MSL（最大段生存期，指报文段在网络中生存的时间，超时会被抛弃） 时间，若该时间段内没有 服务端 的重发请求的话，就进入 CLOSED 状态。当 服务端 收到确认应答后，也便进入 CLOSED 状态。
 * 为什么 客户端 要进入 TIME-WAIT 状态，等待 2MSL 时间后才进入 CLOSED 状态？

@@ -739,8 +739,18 @@ log.warning('lower', '叫 ');
 log.success('lowest', '小帅');
 ```
 
-# base64解码
-`window.decodeURIComponent(window.escape(window.atob('string')))`
+# base64
+解码： `window.decodeURIComponent(window.escape(window.atob('string')))`
+以上已弃用！
+escape 和 unescape 是 JavaScript 中已经弃用的函数，它们对非 ASCII 字符（如中文）的处理方式不一致。
+
+escape 会将某些字符（如 +、/、=）转换为 Unicode 转义序列（如 %2B、%2F、%3D），而 unescape 可能无法正确还原这些字符。
+
+使用 encodeURIComponent 和 decodeURIComponent 可以更好地处理所有字符，包括 Unicode 字符。
+
+
+编码： `window.btoa(window.encodeURIComponent('程相依'))`
+解码： `window.decodeURIComponent(window.atob('JUU3JUE4JThCJUU3JTlCJUI4JUU0JUJFJTlE'))`
 
 
 # js原生获取文件后缀名
@@ -806,7 +816,7 @@ const uuid = (a) =>
     : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, uuid)
 ```
 
-# 打开 Modal 时禁止 body 滚动
+# 打开 Modal（遮罩层） 时禁止 body 滚动
 ```js
 // 打开 Modal 时，禁止 body 滚动
 document.body.style.overflow = 'hidden';
@@ -912,9 +922,32 @@ ipInRange (ip, startIp, endIp) {
 
 # window.AbortController
 AbortController 接口表示一个控制器对象，允许你根据需要中止一个或多个 Web 请求。可以终止fetch或axios（底层也是fetch）请求。
-业务场景：可在跳转404页的时候，终端所有请求，节省资源。
+业务场景：可在跳转404页的时候，中断所有请求，节省资源。
 ```
 if (window.AbortController) {
   new AbortController().abort()
 }
 ```
+
+# 解构起别名的写法
+```js const
+const {
+  Provider,
+  Consumer: CountConsumer
+} = createContext()
+
+import {x as abc} from 'english'
+
+const {state: {from}} = history // 相当于从history中解构出了state中的from属性
+```
+
+# 连续的箭头函数写法（柯里化）
+在 JavaScript 中，连续的箭头函数（也称为“柯里化函数”）是指多个箭头函数嵌套在一起。这种写法通常用于创建接受多个参数的函数，但每次只接受一个参数，并返回一个新的函数来处理剩余的参数。
+`const add = a => b => a + b;`
+解析
+  * 外层函数：a => ... 接受一个参数 a，并返回一个新的函数 b => a + b。
+  * 内层函数：b => a + b 接受一个参数 b，并返回 a + b 的结果。
+调用： const result = add(2)(3); // 结果是 5
+
+# ~~Number 会将数值转为字符串
+~~9 === '9'

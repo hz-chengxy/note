@@ -603,6 +603,10 @@ export default ({dispatch, getState}) => next => action => {
 
 
 
+
+
+
+
 ## immutable
 不可变数据 (Immutable Data )就是一旦创建，就不能再被更改的数据。对 Immutable 对象的任何修改或添加删除操作都会返回一个新的 Immutable 对象。契合redux。
 Immutable 实现的原理是持久化数据结构，即如果对象树中一个节点发生变化，只修改这个节点和受它影响的父节点，其它节点则进行共享。

@@ -1,3 +1,219 @@
+# 运算符
+## <<  >>
+3<<1 => 3转二进制11并向后加一位零 => 110 => 6 
+5>>1 => 5转二进制101并删除掉最后一位 => 10 => 2
+
+```js
+let a = 3
+a<<1 // 6，但此时a还为3
+a<<=1 // 6，且此时a也被赋值为了6
+```
+
+## ++
+```js
+let a = 3
+a++*3 //9
+++a*3 //12
+```
+
+## 位运算符
+* & 与运算：  1&1 =1，其余均为0。
+```js
+25 & 34
+011001
+100010
+与运算后
+000000 = 0
+```
+
+* ｜或运算：  0｜0 =0，其余均为1
+
+* ^ 异或运算： 相同为0，不同位1。常用语加密解密
+
+* ~ 位非运算： 加1取负。 2 => -3
+```js
+let str = 'abcdef'
+if (~str.indexOf('a')) {} 
+// 除了找不到的为-1后，加1取负后为0(false)，其余能找到的加1取负后均为负数(true)，但都是真。
+// 所以这个表达式代表“是否可以查找到该字母”
+```
+
+## ~~Number 会将数值转为字符串
+~~9 === '9'
+
+# while循环
+* break： 跳出当前循环，若有id，可以跳出指定id的外层循环（for循环中也是）
+```js // 查找0～100的质数
+var num=1, i=2, bool=true
+abc:while (num++ < 100) {
+  i = 2
+  bool = true
+  while (i < num){
+    if (num % i === 0) {
+      bool = false;
+      break
+    }
+    if (num > 50) break abc;  // 大于50时，跳出外层while循环
+    i++
+  }
+  if (bool) console.log(num)
+}
+```
+
+* continue：遇到满足条件的，跳到下一次循环，继续向后。当前continue后面的语句不执行。（for循环也是）
+
+## do-while // 先执行，再判断条件是否循环
+```js
+let i =0
+do{
+  console.log(i)
+}while(++i < 10)
+```
+
+# 函数
+## 函数的参数
+* arguments
+arguments 函数的参数会被存储在这个数组中，常用语参数数量不固定
+arguments.callee 当前函数
+arguments.callee.name 当前函数名字
+arguments.callee.caller 调用当前函数的外部函数
+
+```js
+function fn (a,b){
+  arguments.length // 5 实参的长度
+  arguments.callee.length // 2 形参的长度
+}
+fn (1,2,3,4,5)
+fn.length // 2 形参的长度
+```
+
+* rest
+```js
+function fn1 (a, ...rest) {
+    console.log(a) // 1
+    console.log(rest) // [2,3] 
+   }
+   fn1 (1,2,3)
+```
+
+# 数组
+* push 往尾部推若干元素，返回数组长度 `push(2,3,4,5)`
+* pop 删除尾部元素，返回被删除的元素 `let arr = [1,2,3,4,5,6]; while(arr.pop() !== 3)` 这么写可以删除元素到3为止 `arr => [1,2]`
+* unshift 前面添加若干元素，返回新长度。效率低下
+* shift 前面删除元素，返回被删除的元素。效率低下
+* concat `arr.concat([5,6,7],[8,9])`  `arr.concat[5,6,7,8,9]` 
+```js
+//数组去重
+function short_arr (arr) {
+  return arr.reduce((value, item) => {
+    return value.indexOf(item) > -1 ? value : value.concat([item])
+  }, [])
+}
+```
+* splice()
+  * arr.splice(1)  第1开始（包含第1位），删除到尾部，返回被删除元素的新数组
+  * arr.splice(1,2)  从第1位开始（包含第1位）删除2个元素，返回被删除元素的新数组
+  * arr.splice(-1) 从后向前数，开始删除，从最后一位开始
+  * arr.splice(-3, 2) 从倒数第三个开始删，向后删俩
+  * arr.splice(0) 将一个数组的所有元素转到另一个数组
+
+  * arr.splice(1,2,3,4) 将数组从第一位开始删，删俩，并且替换成3，4
+  * arr.splice(1,0,2) 在第一位插入一个元素2，插在了第一位，原第一位被挤在第二位
+* slice 
+  * arr.slice() 复制原数组到新数组
+  * arr.slice(2) 从第2项开始（包含第二项），复制元素到新数组 
+  * arr.slice(-2) 从后向前数第二个开始，向后复制到新数组
+  * arr.slice(1,2) 从第一项复制到第二项，”不包括“结束这一项
+* reverse 将数组颠倒，会改变原数组，以下为两种重构方法
+```js
+// 递归
+const reverse = ([first, ...rest]) => {
+  return first === undefined ? [] : [...reverse(rest), first];
+}
+reverse([1,2,3])
+
+// reduce
+const reverse = arr => arr.reduce((acc, item) => [item, ...acc], []);
+console.log(reverse([1, 2, 3])); // [3, 2, 1]
+```
+
+* sort 将数组正序排序，会改变原数组
+```js
+arr.sort(function (a, b) {
+  // a 泛指后一项 
+  // b 泛指前一项
+  return a-b
+})
+```
+
+* indexOf 查找下标，若无返回-1
+  * arr.indexOf(3,4) 查找3，从第4个下标开始搜索
+* lastIndexOf 从后向前查找元素
+  * arr.lastIndexOf(3,4) 查找3，从第4个下标开始搜索，从后向前
+* fill 填充，fill只能填充有长度的数组 fill(要填充的内容, 从第几位开始填充, 到第几位之前(不包含))
+```js
+let array = new Array(10).fill(3);  // [3,3,3,3,3,3,3,3,3,3]
+let arr = new Array(5).fill(3, 1, 3) // [empty, 3, 3, empty, empty]
+```
+
+* reduce(value, item, index, arr) 归并。 若没有初始值，value就是数组的第0位元素，item从第1位开始。下次循环运行的value是上次return的结果
+
+* flatMap 扁平化数组，参数必传，是一个函数。` arr.flatMap(item => item) ` item代表二元数组的每一项
+
+# 字符串
+* replace ` 'abcdef'.replace('a','c') `将a替换为c，不改变原字符串
+```js
+let str = 'abcdef'
+str = str.replace('cd', function(item){
+  return item+'1'
+})
+```
+* slice 与数组完全相等，包括前，不包括后
+* substring 与slice差不多，包括小的，不包括大的。为什么用“小”和“大”呢。因为substring可以前后倒着写
+```js
+let str = 'abcdefdg'
+str.substring(3,6) //从第3位截到第6位之前，“def” 包括3，不包括6
+str.substring(6,3) //从第3位截到第6位之前，“def” 包括3，不包括6
+```
+* substr `str.substr(index, length)` 从第index位开始截取，截取length长度
+
+* str.toUpperCase() 大写
+* str.toLowerCase() 小写
+
+* split 切割。 
+```js
+str.split("").reverse().join("") // 字符串反转
+
+// 获取Url查询参数部分(即?后的)
+let str = 'https://fanyi.baidu.com/mtpe-individual/multimodal?query=shift&lang=en2zh&fr=pcPinzhuan'
+let params = str.split("?")[1]
+
+// 若参数部分有?号
+let params = str.split("?").shift().join("")
+
+// 当然，现有更高效的写法
+const urlObj = new URL(url);
+const params = new URLSearchParams(urlObj.search); // 获取URL中的查询参数部分，并且是已经存储为URLSearchParams对象了，并且可以直接用forEach等数组方法遍历
+```
+
+# BOM window
+就是整个浏览器，包含开、关、放大等等
+
+# DOM document
+浏览器实际可视区域
+
+# 事件
+* 可利用事件抛发传参
+```js
+document.addEventListener('cxy', (e) => console.log(e.params)) // 侦听，获得params参数：test
+
+let cusEvent = new Event('cxy')
+cusEvent.params = 'test'
+document.dispatchEvent(cusEvent) // 再抛发，抛发时执行回调
+```
+
+
+# promise
 ## promise
 ### 基础promise写法
 ```js
@@ -948,6 +1164,3 @@ const {state: {from}} = history // 相当于从history中解构出了state中的
   * 外层函数：a => ... 接受一个参数 a，并返回一个新的函数 b => a + b。
   * 内层函数：b => a + b 接受一个参数 b，并返回 a + b 的结果。
 调用： const result = add(2)(3); // 结果是 5
-
-# ~~Number 会将数值转为字符串
-~~9 === '9'

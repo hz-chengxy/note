@@ -179,6 +179,16 @@ str.substring(6,3) //从第3位截到第6位之前，“def” 包括3，不包�
 
 * str.toUpperCase() 大写
 * str.toLowerCase() 小写
+* str.repeat(num) 字符串重复num次，返回一个新字符串
+
+* str.includes('string') 判断字符在字符串中是否存在，返回true或false
+
+* str.startsWith('a') 判断是否以'a'开始 `str.startsWith('a', 1)` 判断第一位开始是否是a
+* str.endsWith('a') 判断是否以'a'结束，也可传第二个参数
+
+* str.padStart(num, string) 当字符串长度不足num时，前面补string
+* str.padEnd(num, string) 当字符串长度不足num时，后面补string
+* 随机色 ` "#" + Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6, 0) `
 
 * split 切割。 
 ```js
@@ -196,6 +206,101 @@ const urlObj = new URL(url);
 const params = new URLSearchParams(urlObj.search); // 获取URL中的查询参数部分，并且是已经存储为URLSearchParams对象了，并且可以直接用forEach等数组方法遍历
 ```
 
+# Set与Map
+## Set 
+无重复列表类型，无下标，不按照下标存储，但有序。插入速度和删除速度非常快，遍历也快，但略低于键值对类型
+* 创建 `let set = new Set([])`
+* 插入元素 `set.add(1)`
+* 删除元素 `set.delete(2)`
+* 是否存在 `set.has(2)`
+* 清除元素 `set.clear()`
+* 长度平替 `set.size()`
+* 去重 `Array.from(new Set(arr))`
+* 遍历 forEach  forOf  `for(let value of new Set([1,2,3])) {console.log(value) 1、2、3}`
+```js
+let set = new Set([1,2,3])
+for (let value of set) {
+  console.log(value) // 1 2 3
+}
+set.forEach((v1, v2, set) => {
+  console.log(v1, v2, set) 
+  // 打印出来v1=v2 等于遍历元素内容，set就是set本身
+  // 这意味着set本身就是键值对，不过是key和value相等的键值对，key是绝不可能重复的，所以set就不可能重复
+})
+```
+
+## Map
+有长度的键值对数据结构，具备数组的长度紧密型，有具备对象的键值对方法。获取、查询、删除、遍历速度极快。并且任何类型的数据都可作为键使用
+* 创建 `let map = new Map()`
+* 赋值 `map.set('name', 'cxy')`
+* 获取 `map.get('name')`
+* 判断某个键是否存在 `map.has('name')`
+* 长度 `map.size()`
+* 删除 `map.delete('name')`
+* 清除 `map.clear()`
+* 获取所有值的列表 `map.values()` 获取的这个列表可以转为Set类型，进而转为数组 `Array.from(new Set(map.values()))`
+* 获取所有键的列表 `map.keys()`
+* 遍历
+  * forEach `map.forEach((值， 键值， map本身)=> {})`
+  * forOf
+  ```js
+    for(let key of map.keys()){} // 键值的遍历
+    for(let value of map.values()){} // 值的遍历
+    for(let arr of map.entries()) { // 键值的遍历
+      console.log(arr[0]) // 键
+      console.log(arr[1]) // 值
+    }
+  ```
+## Symbol 
+唯一性，创建后，不可能存在和它一样的数据（双等和三等都不同） （什么才是真正的常量啊，哈哈哈）
+对象的键必须是字符串，或是symbol
+五种基本类型：Number String Boolean null undefined 一种复杂类型：Object。
+新增了一个symbol类型
+* 创建 `let a = Symbol('a')` `let a = Symbol()`
+* 即使创建了n个Symbol()，这n个Symbol()也完全不一样。这样可以用作判断条件使用，可使条件强判断就是这个symbol时，才可进入条件的回调，更加规范。以防万一
+* 对象中使用symbol
+```js
+let KEY = Symbol()
+let obj = { [KEY]: 100 }
+console.log(obj[KEY]) 
+// 其他任何常量都无法访问到这个键值对。这个键名就这辈子都不会被覆盖
+```
+
+# 类
+* 类型判断 typeof function === 'function'; typeof obj === 'object' ; function.constructor === Function; obj.constructor === Object;
+```js
+class Ball extends Box{
+  a='a'
+  constructor(a){
+    super(a) // 父类的构造函数，继承后需要执行
+    // 构造函数中不能return返回某个对象，因为构造函数会默认返回this，如果返回了对象就会覆盖this。this就是实例话完成的对象
+  },
+  clickHandler (e) {
+    // 若父类有这个方法，则会覆盖原方法，若不想覆盖，只想在原来的基础上新加逻辑
+    super.clickHandler(e) // 先执行父类方法，在执行后来新加的方法
+    console.log(...)
+  },
+  static isBox(){} // 静态方法。静态方法理论不能使用this，但实际上也不报错，this就是类名
+  static A = 12 // 静态属性。这俩静态的，都只能通过类名Box来调用，不能通过实例话对象来调用
+  showDemo () {
+    // 取静态属性也要加上类名
+    console.log(Box.A)
+    console.log(Box.isBox())
+    console.log(this.a)
+  }
+}
+
+Box.c = '1' // 直接在类上定义的属性为静态属性，只能通过类获取到，方法同理
+Box.prototype.d = '2' // 在原型上定义的属性为实例属性，可以通过实例话对象获取到
+let box = new Box()
+box.d // 2
+box.c // undefined
+Box.d // undefined
+Box.c // 1
+```
+
+* 模块化开发的时候，想要使用import 需要给script加`type='modules'` `<script type="module">`
+
 # BOM window
 就是整个浏览器，包含开、关、放大等等
 
@@ -203,15 +308,270 @@ const params = new URLSearchParams(urlObj.search); // 获取URL中的查询参�
 浏览器实际可视区域
 
 # 事件
-* 可利用事件抛发传参
+* 可利用事件抛发传参，必须先侦听，抛发时才能接收到。先抛发再侦听则不行
 ```js
 document.addEventListener('cxy', (e) => console.log(e.params)) // 侦听，获得params参数：test
+e.target // 实际触发了事件的元素
+e.currentTarget // 被侦听的元素
 
 let cusEvent = new Event('cxy')
 cusEvent.params = 'test'
 document.dispatchEvent(cusEvent) // 再抛发，抛发时执行回调
 ```
 
+# async await
+* async 函数必然返回一个promise对象，其实async本来也就是个promise
+* await 必须写在async中
+* await 只能处理promise对象的等待，也就是不会等setTimout或setInterval
+* await 会等promise中的setTimout或setInterval
+* async 函数返回的内容，可以在.then中接收到
+```js
+async function test() {
+  return 'b'
+}
+let result = test()
+console.log(result) // promise
+result.then(res => console.log(res)) // 'b'
+```
+
+# 宏任务与微任务
+## 宏任务 setTimout setInterval
+宏任务将当前任务挪至下一个任务列的最顶端执行
+
+## 微任务 promise
+微任务将当前任务挪至当前任务列的最底端执行
+
+具体的执行顺序判断，如果将来还不懂的话，建议看视频，js -> 0804 -> 宏任务与微任务
+
+# node
+* package.json解读:  dependencies项目打包会打进的包合集；devDependencies: 开发时用的包，不打入最终包
+
+# AJAX
+* AJAX如果你连续快速发了多次请求，它只会将最后一次请求返回
+* 跨域也分为“消息头”跨域和“消息体“跨域
+* 一般form表单的默认提交要屏蔽掉，通过AJAX提交，而且默认的可能会刷一下页面，很难看。在submit事件中通过`e.preventDefault()`阻止默认事件
+```js get
+var xhr = new XMLHttpRequest()
+let url = 'https://localhost:8080?user=cxy'
+xhr.addEventListener('load', loadHandler)
+xhr.addEventListener("timeout",timeoutHandler); // 超时回调
+xhr.open('GET', url)
+xhr.setRequestHeader("content-type", '') // 设置请求头，open后，send前
+// GET允许发送自定义消息头，POST不允许
+// 发送自定义消息头时，必须在服务端设置响应头跨域同意Access-Control-Allow-Headers："*"
+// "Access-Control-Allow-Origin":"*", 请求体跨域
+xhr.setRequestHeader("name", 'cxy')
+xhr.send()
+function loadHandler(e) {
+  xhr.getAllResponseHeaders() // 获取所有响应头，不包括自定义的响应头
+  xhr.getResponseHeader('content-type') //获取指定的响应头
+}
+function timeoutHandler () {}
+```
+
+```js post
+var xhr = new XMLHttpRequest()
+let url = 'https://localhost:8080'
+let params = {
+  name: 'cxy'
+  age: 26
+}
+xhr.addEventListener('load', loadHandler)
+xhr.open('POST', url)
+xhr.send(JSON.string(params))
+function loadHandler(e) {}
+```
+
+* 然后实际上不使用load事件，多用`readystatechange`
+```js
+var xhr=new XMLHttpRequest();
+xhr.addEventListener("readystatechange",readyHandler);
+xhr.open("GET","http://localhost:4006?user=xietian&age=30");
+xhr.send();
+function readyHandler(e){
+    // xhr.status 响应消息的状态
+    if(xhr.readyState===4 && xhr.status===200){
+        console.log(xhr.response);
+    }
+}
+```
+
+* jsonp解决跨域，极其不安全，不怎么用
+```js
+var script=document.createElement("script");
+script.src="http://localhost:4008?a=3&b=4";
+document.body.appendChild(script);
+// 如果script的src指向服务端，服务端中write内容将是这个script执行的脚本
+// script返回的内容，会直接在这个创建的script脚本中执行
+```
+
+# setter getter
+* 如果仅有set，没有get，这个属性就是只写属性
+* 如果仅有get，没有set，这个属性就是一个只读属性
+```js es6可以通过只设置get来定义常量
+class Box{
+// static  const EVENT_ID="Event_Id"; es6没有const
+  constructor(){
+    this.check = !this.check // 内部改也会触发set
+  }
+  _check= false
+  static get EVENT_ID(){
+      return "EVENT_ID";
+  }
+  set check(val) {
+    return this._check = val
+  }
+  get check() {
+    return this._check
+  }
+}
+```
+* 对象中定义set和get
+```js
+var obj = {
+  a: 1,
+  _c: 0,
+  // set有且仅有一个参数
+  set c(value) {
+    this._c = value;
+  },
+  // 不允许有任何参数
+  get c() {
+    return this._c;
+  },
+};
+obj.c = 10 // 修改c时，便会调用set，
+console.log(c) // 获取c时，便会调用get
+```
+
+* 可以通过`Object.defineProperty`或`Object.defineProperties`给DOM中的元素增加setter和getter获取响应式
+`var div = document.querySelector("div");`获取要加setter和getter的dom
+```js 设置单一属性
+div._width=0;
+Object.defineProperty(div,"width",{ // 通过defineProperty设置的以下三个高级属性，默认值是false。普通赋值div.a的方式，a属性的三个高级属性，默认值是true
+  value: 30 // 属性值
+  enumerable:true, // 可枚举 默认false
+  writable：true, // 可修改 默认false
+  configurable: true, // 是否允许修改属性描述符或删除属性，默认false
+  set:function(_value){
+      this.style.width=_value.toString().indexOf("px")>-1 ? _value : _value+"px";
+      this._width=_value;
+  },
+  get:function(){
+      return this._width;
+  }
+});
+div.width++;
+// 触发set
+```
+```js 设置多个属性
+Object.defineProperties(div, {
+  _width: {
+    writable: true,
+    value: 0,
+  },
+  _height: {
+    writable: true,
+    value: 0,
+  },
+  _bgColor: {
+    writable: true,
+    value: 0,
+  },
+  width: {
+    enumerable: true,
+    set: function (_value) {
+      this.style.width =
+        _value.toString().indexOf("px") > -1 ? _value : _value + "px";
+      this._width = _value;
+    },
+    get: function () {
+      return this._width;
+    },
+  },
+  height: {
+    enumerable: true,
+    set: function (_value) {
+      this.style.height =
+        _value.toString().indexOf("px") > -1 ? _value : _value + "px";
+      this._height = _value;
+    },
+    get: function () {
+      return this._height;
+    },
+  },
+  bgColor: {
+    enumerable: true,
+    set: function (_value) {
+      this.style.backgroundColor =
+        typeof _value === "string"
+          ? _value
+          : "#" + _value.toString(16).padStart(6, "0");
+      this._bgColor = _value;
+    },
+    get: function () {
+      return this._bgColor;
+    },
+  },
+});
+div.width++;
+div.height++;
+div.bgColor++;
+// 触发div中的set
+```
+
+# 闭包
+* 是指有权访问另一个函数作用域中的局部变量
+* 为了解决变量污染
+* 为了得到私有变量
+* 缺点:  会造成内存泄漏
+```js
+function fn1(){
+    var a=1;
+    // 因为返回的函数被存储在全局变量中，
+    // 并且这个返回的函数使用这个a的局部变量，因此a被保存在堆中
+    return function(){
+        a++;
+        console.log(a);
+    }
+}
+var f=fn1();
+f() // 2
+f(); // 3
+```
+
+## 柯里化 （算是另一种手段的业务分离？也许吧）
+```js
+function curry(fn){
+    var arr=[]; // 闭包的局部变量
+    return function(){
+      if(arguments.length>0){
+          // 专门处理参数
+          arr=arr.concat(Array.from(arguments));
+          return arguments.callee;
+      }else{
+        // 实际的业务逻辑
+          return  fn.apply(null,arr);
+      }
+    }
+}
+
+function fns(){
+    return Array.from(arguments).reduce((value,item)=>value+=item); // 求和
+}
+
+var sum=curry(fns);
+var s=sum(1)(2,3)(4,5,6)()
+console.log(s);
+```
+
+# 设计模式
+* 工厂模式：假设有一份很复杂的代码需要用户去调用，但是用户并不关心这些复杂的代码，只需要你提供给我一个接口去调用，用户只负责传递需要的参数，至于这些参数怎么使用，内部有什么逻辑是不关心的，只需要你最后返回我一个实例。这个构造过程就是工厂。工厂起到的作用就是隐藏了创建实例的复杂度，只需要提供一个接口，简单清晰。（给零件，调函数，出工程化的对象，每个对象都不一样，无引用关系）
+* 单例模式：单例模式很常用，比如全局缓存、全局状态管理(Vuex )等等这些只需要一个对象，就可以使用单例模式。（最终形成的对象或者其他的，就那么一个，存在就直接return已存在出去，不再创建新的）
+* 装饰模式：不需要改变已有的接口，作用是给对象添加功能。在 React 中，装饰模式其实随处可见。
+* 代理模式：代理是为了控制对对象的访问，不让外部直接访问到对象。比如事件代理就用到了代理模式。因为存在太多的 li，不可能每个都去绑定事件。这时候可以通过给父节点绑定一个事件，让父节点作为代理去拿到真实点击的节点。
+* 发布-订阅模式：也叫做观察者模式。通过一对一或者一对多的依赖关系，当对象发生改变时，订阅方都会收到通知。比如我们点击一个按钮触发了点击事件就是使用了该模式。在 Vue 中，如何实现响应式也是使用了该模式。对于需要实现响应式的对象来说，在 get 的时候会进行依赖收集，当改变了对象的属性时，就会触发派发更新。
+  * 学习完redux之后，发现redux也是观察者模式，将所有被观察的对象放在一个列表里，当需要被执行时，或被dispatch时。通知观察列表里的所有对象执行。
 
 # promise
 ## promise
@@ -1164,3 +1524,15 @@ const {state: {from}} = history // 相当于从history中解构出了state中的
   * 外层函数：a => ... 接受一个参数 a，并返回一个新的函数 b => a + b。
   * 内层函数：b => a + b 接受一个参数 b，并返回 a + b 的结果。
 调用： const result = add(2)(3); // 结果是 5
+
+```js
+const multiply = a => b => c => a * b * c;
+const result = multiply(2)(3)(4); // 结果是 24
+
+// multiply(2) 返回 b => c => 2 * b * c。
+// multiply(2)(3) 返回 c => 2 * 3 * c。
+// multiply(2)(3)(4) 调用返回的函数，传入 4，得到 2 * 3 * 4，结果为 24。
+```
+
+# getBoundingClientRect
+`DOM.getBoundingClientRect()` 获取当前dom的详细信息，包括位置，大小等等，很详细

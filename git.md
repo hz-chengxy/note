@@ -34,6 +34,7 @@ git add app/   追踪app/目录下所有的文件
 
 ## git commit -m 'test' 带注释提交到本地仓库
 提交到本地仓库，并加上注释test
+* git commit --amend -m "" 替代上一次commit的注释
 
 ## git push 推至远程仓库
 

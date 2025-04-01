@@ -17,6 +17,100 @@ this.setState(preState => {
 <div dangerouslySetInnerHTML={{__html:data}}>
 // 这个data就是要渲染的富文本
 ```
+## 循环生成html结构
+```js
+const Test = () => {
+  const arr = [
+    <div key={1}>1</div>,
+    <div key={2}>2</div>,
+    <div key={3}>3</div>,
+  ]
+  return (
+    <div>
+    {
+      false 
+      ? arr.map((item, index) => item)
+      : arr.filter((item, index) => index !== 1) // 可以更优雅的过滤
+    }
+    </div>
+  )
+}
+```
+
+## 使用prop-types检查props
+函数式组件使用proptypes做检查
+`import propsTypes from 'prop-types'`
+```jsx
+const A = () => {
+  return (<div></div>)
+}
+A.propsTypes = {
+  list: propsTypes.array
+}
+```
+
+```jsx
+class A extends Component {
+  static propsTypes = {
+    list: propsTypes.array
+  }
+}
+```
+
+## style-components
+```js 定义一个Container标签，同时可以在字符串模板里接收参数
+import styled from 'styled-components'
+
+const Container = styled.h2 `
+  padding: .1rem .15rem;
+  background-color: ${props => props.outerbg};
+  > div {
+    display: flex;
+    height: .4rem;
+    border: ${(props) => props.hasborder ? 'solid 1px #ee742f' : ''};
+    border-radius: .06rem;
+    justify-content: center;
+    align-items: center;
+    background-color: ${props => props.innerbg};
+    svg {
+      width: .18rem;
+      height: .18rem;
+      margin-right: .06rem;
+      fill: #ee742f;
+    }
+    span {
+      color: #666;
+    }
+  }
+`
+
+export {
+  Container
+}
+```
+在使用时`<Container {...this.props}/>` 该标签里的元素就会接收到所有的样式
+
+### 增强style-components
+```js // 定义一个增加js
+import styled from 'styled-components'
+const border = (wrappedComp) => {
+  const enhanceComp = styled(wrappedComp)`
+    font-size: 18px
+  `
+  return enhanceComp
+}
+export default border
+```
+
+```js 增强原Container
+import styled from 'styled-components'
+import border from 'border.js'
+
+const Container = border(styled.div `
+  padding: .1rem .15rem;
+  background-color: ${props => props.outerbg};
+`)
+```
 
 ## 利用柯里化解决传参的问题
 ```js
@@ -270,7 +364,7 @@ module.exports = override(addDecoratorsLegacy(),customize())
 ```
 
 ### portal 利用高阶组件，将dom创建在任意位置
-示例为将任意调用该高阶组件的组件，创建在body下 
+示例为将任意调用该高阶组件的组件，创建在body下。可用于写弹框组件等等
 ```js
 import React, {Component} from 'react'
 import { createPortal } from 'react-dom'
@@ -522,7 +616,7 @@ store.subscribe(render)
     ```
   
   * 副作用函数合集actionCreator
-    * 引入redux-thunk中间件插件，帮助craetor副作用函数中可以返回一个非扁平的对象
+    * 引入redux-thunk中间件插件，帮助creator副作用函数中可以返回一个非扁平的对象
     在store创建中引入thunk
     ```js
       import { createStore, applyMiddleware } from 'redux'
@@ -541,6 +635,20 @@ store.subscribe(render)
         return dispatch
       }
     ```
+
+### combineReducers
+combineReducers用于整合所有的reducer为新的树，类似vuex的命名空间
+```js
+import { combineReducers } from 'redux'
+import { reducer as cook } from '@c/home/cook'
+import { reducer as tool } from '@c/home/tool'
+
+const rootReducer = combineReducers({
+  cook,
+  tool
+})
+export default rootReducer
+```
 
 ### redux-thunk中间件
 目前所有redux的读写，均为同步操作，action均为简单的扁平化对象。一旦需要ajax请求，action不可避免的就需要返回一个非扁平的对象，包括函数什么的。
@@ -977,6 +1085,7 @@ state相当于多传了一个参数，同时会被埋在this.props.location里�
 ### history.push
 let history = this.props.history
 history.push('path') 实现路由跳转
+history.push('path', {title: 1})，该参数会被埋在this.props.location.state中
 
 ### useLocation useParams useHistory useRouteMatch
 useLocation: 可获取this.props.location，仅在函数式组件中使用
@@ -1011,6 +1120,130 @@ useRouteMatch: 可精确获取当前匹配的url，若路由定义的是/a，实
   </Route>
 </Switch>
 ```
+
+### 路由动画 react-transition-group + animation.css
+`yarn add react-transition-group`
+`yarn add animate.css`
+```js
+import React, { Component } from 'react'
+import { CSSTransition } from 'react-transition-group'
+import 'animate.css';
+
+export default class App extends Component {
+  state = {
+    show: true
+  }
+  handleClick = () => {
+    this.setState({
+      show: !this.state.show
+    })
+  }
+  render() {
+    return (
+      <div>
+      <CSSTransition
+        in={this.state.show}
+        classNames={{  
+          // 借助animation的动画，分三个状态：出现： appear、 显示：enter、隐藏：exit。且每个状态额初始值都是animate__animated
+          // Active就是实际执行所调用的animation插件动画，appearActive：显示出现时的动画。enterActive：出现时的动画。exitActive：隐藏时的动画
+          // mountOnEnter挂载出现动画；unmountOnExit挂载消失动画；appear：挂载出现动画。
+          appear: 'animate__animated',  // 
+          appearActive: 'animate__backInDown',
+          enter: 'animate__animated',
+          enterActive: 'animate__bounceInLeft',
+          exit: 'animate__animated',
+          exitActive: 'animate__backOutRight',
+         }}
+         appear={true}
+          unmountOnExit
+          mountOnEnter
+        timeout={1000}
+      >
+        <h1>你好</h1>
+      </CSSTransition>
+      <button onClick={this.handleClick}>change</button>
+    </div>
+    )
+  }
+}
+```
+
+#### 在实际的react项目中使用动画组件CSSTransition
+一般的组件都是通过路由渲染出来的，`<Route path="/home" children={props => <Home {...props}></Home>}></Route>`。
+几个动画相关的组件最好通过定位控制一下，再通过z-index控制层级，使几个组件是叠着放在一起的。
+而直接用CSSTransition包裹路由很不雅观，所以最好通过高阶组件来装饰Home组件，来达到提升组件功能的作用。
+```js
+import React, {Component} from 'react'
+import { CSSTransition } from 'react-transition-group'
+
+const animate = (WrappedComp) => {
+  return class extends Component {
+    render() {
+      return (
+        <CSSTransition
+          in={true}
+          timeout={300}
+          classNames={{
+            enter: "animate__animated",
+            enterActive: "animate__slideInRight",
+            exit: "animate__animated",
+            exitActive: "animate__slideOutRight"
+          }}
+          mountOnEnter
+          unmountOnExit
+        >
+          <WrappedComp {...this.props}></WrappedComp>
+        </CSSTransition>
+      )
+    }
+  }
+}
+export default animate
+```
+比较难搞定的就是CSSTransition中的in属性，因为我们一般都是通过路由去渲染的，而不是直接通过true或者false的逻辑去渲染的，所以不好确定根据什么去控制组件的显隐。
+而且如果想要实现动画，就需要把动画过渡相关的所有组件，都是时刻挂载的状态，那么Route中的component就不再满足需求了，故而转为使用children(实时挂载)。
+那么只剩下一个问题，那就是“in”属性，该拿什么变量去控制。这里我们选用路由信息中的match属性。`let {match} = this.props`。
+然后最好还需要知道是从哪里来的，而react的路由信息是没有from和to的信息的，所有只能在路由跳转的时候自己传`this.props.history.push('/detail', { from: '/home' })`。
+所以高阶组件就被修改为了：
+```js
+import React, {Component} from 'react'
+import { CSSTransition } from 'react-transition-group'
+
+const animate = (WrappedComp) => {
+  return class extends Component {
+    render() {
+      let state = this.props.location.state
+
+      let pathname = this.props.location.pathname // 当前路由
+      let from = state && state.from //从哪里来
+
+      let {match} = this.props // 是否匹配
+
+      // 有了从哪里来，当前是哪个，就可以写一系列的业务逻辑，来保证显隐动画地正常运行
+
+      return (
+        <CSSTransition
+          in={!!match}
+          timeout={300}
+          classNames={{
+            enter: "animate__animated",
+            enterActive: "animate__slideInRight",
+            exit: "animate__animated",
+            exitActive: "animate__slideOutRight"
+          }}
+          mountOnEnter={true}
+          unmountOnExit={true}
+        >
+          <WrappedComp {...this.props}></WrappedComp>
+        </CSSTransition>
+      )
+    }
+  }
+}
+
+export default animate
+```
+
 
 ## React.lazy()
 懒加载模块，要配合React.Suspense使用
@@ -1238,7 +1471,7 @@ const useDataList = function(id) {
 export default useDataList
 ```
 
-## memoization
+## memoization（memoize-one）
 和React.memo类似，不过memo缓存的是组件（函数式），而memoization缓存的是函数，并且可以顺便作为vue的计算属性来使用。
 ```js
 import React, { useState } from 'react'

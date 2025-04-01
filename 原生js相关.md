@@ -41,6 +41,52 @@ if (~str.indexOf('a')) {}
 ## ~~Number 会将数值转为字符串
 ~~9 === '9'
 
+# switch
+```js
+let score = 85;
+let grade;
+
+switch(true) {
+  case score >= 90:
+    grade = 'A';
+    break;
+  case score >= 80:
+    grade = 'B';
+    break;
+  case score >= 70:
+    grade = 'C';
+    break;
+  case score >= 60:
+    grade = 'D';
+    break;
+  default:
+    grade = 'F';
+}
+
+console.log(grade); // 输出: B
+
+// ---------------------------------------
+
+let fruit = '苹果';
+let message;
+
+switch(fruit) {
+  case '苹果':
+  case '梨':
+  case '香蕉':
+    message = '这是常见水果';
+    break;
+  case '火龙果':
+  case '山竹':
+    message = '这是热带水果';
+    break;
+  default:
+    message = '未知水果';
+}
+
+console.log(message); // 输出: 这是常见水果
+```
+
 # while循环
 * break： 跳出当前循环，若有id，可以跳出指定id的外层循环（for循环中也是）
 ```js // 查找0～100的质数
@@ -345,6 +391,8 @@ result.then(res => console.log(res)) // 'b'
 
 # node
 * package.json解读:  dependencies项目打包会打进的包合集；devDependencies: 开发时用的包，不打入最终包
+使用 --save (-S) 安装的包是项目发布之后还需要依赖的包 ， 如axiox , express等包，等项目上线以后还需使用。 会打入dependencies
+使用 --save-dev （-D） 安装的包则是开发时依赖的包，等项目上线则不会使。如项目中使用的 gulp , 压缩css、js 的模块等在项目上线后则不会使用。会打入devDependencies
 
 # AJAX
 * AJAX如果你连续快速发了多次请求，它只会将最后一次请求返回

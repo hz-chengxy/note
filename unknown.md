@@ -1110,3 +1110,7 @@ https://juejin.cn/post/7362080157190570010
 
 ## ['1','5','11'].map(parseInt)会返回[1,NaN,3]
 https://juejin.cn/post/7370630910071373874
+
+# websocket
+
+# commonJS规范的require 和es6的import 区别在哪

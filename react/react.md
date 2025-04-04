@@ -469,10 +469,11 @@ store.subscribe(render)
 
 
 ## react-redux插件
+要同时装redux：4.0.5和react-redux：7.2.1
 * 该插件借助context思想，完善redux的使用
 
   * **定义store与对应的纯函数**
-    ```js 创建纯函数
+    ```js 创建纯函数reducer.js
     const defaultState = {
       list: []
     }
@@ -501,7 +502,7 @@ store.subscribe(render)
     }
     ```
 
-    ```js 创建store
+    ```js 创建store,index.js
     import { createStore } from 'redux'
 
     import reducer from './reducer' 
@@ -692,30 +693,165 @@ export default ({dispatch, getState}) => next => action => {
 }
 ```
 
+### saga
+* 安装`yarn add redux-sage`
+* store中引入sage
+```js
+import { createStore, applyMiddleware } from 'redux'
+import createSagaMiddleware from 'redux-saga'
+
+import mySaga from './sagas' // sage的主体，生成器函数
+
+const sagaMiddleware = createSagaMiddleware()
+const store = createStore(
+  reducer,
+  applyMiddleware(sagaMiddleware)
+)
+sagaMiddleware.run(helloSaga)
+
+export default store
+```
+
+```js 定义sagas.js
+import { takeEvery, put, call } from 'redux-saga/effects'
+
+function* sagaAsync() {
+  // put中的"add"，为reducer中定义的“actionType”
+  yield put({type: 'add', data: 100})
+}
+
+function * sagas() {
+  // 接受所有的dispatch对应的action的请求
+  // “takeEvery”中的“sagaAdd”为组件中实际调用时传的“actionType”，不能和reducer中实际定义的“actionType”重复，否则会死循环。
+  // 这里起到中介的作用，甚至可以理解为假的
+  yield takeEvery('sagaAdd', sagaAsync)
+}
+
+export default sagas
+```
+
+#### saga在react项目中的使用
+1. 假设你原来的项目中的某个模块定义了一个异步的actionCreator
+```js
+import { LOADDATA } from './actionTypes'
+import { get } from '@u/http.js'
+
+const loadDataSync = list => {
+  return {
+    type: LOADDATA,
+    list
+  }
+}
+const loadDataAsync = () => {
+  return async (dispatch) => {
+    let result = await get({
+      url: '/api/list'
+    })
+    dispatch(loadDataSync(result.data.data))
+  }
+}
+
+export default {
+  loadDataSync,
+  loadDataAsync
+}
+```
+
+2. 用saga将这个异步的action改造，改造后，actionCreator中只剩下同步方法loadDataSync，供saga同步调用
+```js
+import { takeEvery, put, call } from 'redux-saga/effects'
+
+import { get } from '@u/http.js'
+
+import actionCreater from './actionCreator'
+
+function* loadDataAsync() {
+  let res = yield call(get, {url: '/api/list'})
+  // let res = yield get({url: '/api/list'}) 也可以这么写，不用call
+  yield put(actionCreater.loadDataSync(res.data.data))
+} 
+
+function* loadData() {
+  yield takeEvery('loadDataSaga', loadDataAsync) // 这里相当于定义了一个actionType为loadDataSaga，供组件中直接调用，起中介作用
+}
+
+export default loadData
+```
+
+3. 在根目录store中的saga中接收这个分支saga
+```js
+import { saga } from '@/home/cookbook'
+export default [
+  saga
+]
+```
+
+4. 在根目录store中的index做循环，分别注册每一个分支中saga导出的函数
+```js
+import { createStore, applyMiddleware } from 'redux'
+import createSagaMiddleware from 'redux-saga'
+
+import reducer from './reducer'
+import sagas from './sagas'
+
+const sagaMiddleware = createSagaMiddleware()
+
+
+const store = createStore(
+  reducer,
+  applyMiddleware(sagaMiddleware)
+)
+
+sagas.forEach(saga => sagaMiddleware.run(saga))
+
+export default store
+```
+
+5. 那么在组件中，便可以直接通过dispatch那个在saga中新定义的假actionType，来触发异步函数。或者在那个模块的actionCreator中定义一个新的函数。
+此步骤修改的文件为第1步中的js文件
+```JS
+import { LOADDATA } from './actionTypes'
+
+const loadDataSync = list => {
+  return {
+    type: LOADDATA,
+    list
+  }
+}
+const loadDataSyncSaga = () => {
+  return {
+    type: 'loadDataSaga'
+  }
+}
+
+export default {
+  loadDataSync,
+  loadDataSyncSaga
+}
+```
+
+6. 那么之后你在组件中调用便可以
+```js
+dispatch(actionCreator.loadDataSyncSaga())
+// 当然也可以直接根据新定义的actionType去调用
+dispatch({
+  type: 'loadDataSaga'
+})
+```
+
 ## 纯函数
+* 纯函数是指在相同的输入下，总是返回相同的输出，并且**不会产生副作用（Side Effects）**的函数。它是函数式编程的核心概念之一，具有可预测性、可测试性和易于维护的特点。
+  * 相同输入 ⇒ 相同输出（确定性）。只要参数相同，无论调用多少次，返回值永远一致。
+  * 无副作用。不会修改外部状态
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+* 常见的非纯函数操作（副作用），以下操作会破坏函数的纯度：
+  * 修改外部变量或参数（如 obj.value = newValue）。
+  * 发起网络请求（fetch、axios）。
+  * 操作 DOM（document.getElementById(...).innerHTML = ...）。
 
 
 ## immutable
+yarn add immutable
 不可变数据 (Immutable Data )就是一旦创建，就不能再被更改的数据。对 Immutable 对象的任何修改或添加删除操作都会返回一个新的 Immutable 对象。契合redux。
 Immutable 实现的原理是持久化数据结构，即如果对象树中一个节点发生变化，只修改这个节点和受它影响的父节点，其它节点则进行共享。
 vue会通过比对（diff）找出变化的部分，但修改的是原组件的状态和 DOM，而不是完全替换，因为做了响应式。
@@ -791,6 +927,54 @@ list1.get(2).withMutations((map) => {
 * is 与equals类似，写法不一样： `is(Map1, Map2)`
 
 * Set 与原生set类似，不允许重复。 const set = Set().add(map1).has(map1)  // true
+
+### 在react中使用immutable
+引入react-immutable  `yarn add react-immutable `
+```jsx 将树根转为immutable对象
+import {createStore, applyMiddleware} from 'redux'
+import thunk from 'redux-thunk'
+import { combineReducers } from 'redux-immutable' // 不再从react-redux引入combine方法，而从redux-immutable中
+import Immutable from 'immutable'
+
+import { reducer as cook } from '@c/home/cook'
+import { reducer as tool } from '@c/home/tool'
+
+const rootReducer = combineReducers({
+  cook,
+  tool
+})
+const initialState = Immutable.Map()
+const store = createStore(
+  rootReducer,
+  initialState,
+  applyMiddleware(thunk)
+)
+```
+
+在之后的reducer中，定义状态和修改状态，包括在组件内读取状态，就都要用immutable的语法。
+```js reducer 定义和修改，之后在组件中读，就遵循immutable的语法读就可以了，必要时可以用toJS()转换成原生JS
+import { fromJS } from 'immutable'
+
+const defaultState = fromJS({
+  routeInfo: {
+    selectedTab: 'cookbook',
+    cateAside: ''
+  }
+})
+
+const reducer = (state = defaultState, action) => {
+  switch(action.type) {
+    case 'changeSelectedTab':
+      return state.setIn(['routeInfo', 'selectedTab'], action.selectedTab)
+    case 'changeCateAside':
+      return state.setIn(['routeInfo', 'cateAside'], action.cateAside)
+    default:
+      return state
+  }
+}
+
+export default reducer
+```
 
 ## mobx的使用
 与redux的类似的产品，思想更接近vuex
@@ -998,6 +1182,22 @@ class Store {
 
 
 ## react-router
+5.2.0版本。
+需要在根目录引入BrowserRouter
+```JS
+import ReactDOM from 'react-dom'
+import React, {Component} from 'react'
+import { BrowserRouter} from "react-router-dom";
+
+import App from './App'
+// 把根组件的最外层包起来
+ReactDOM.render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>,
+  document.getElementById('root')
+)
+```
 
 ### 基础用法与switch
 ```js
@@ -1064,6 +1264,8 @@ class Home extends Component {render(){}}
 
 但是装饰器无法直接放在函数组件上方装饰函数式组件，只能通过高阶组件的方式进行状态提升
 const Home = withRouter((props) => (<div>Home</div>))
+
+当然，还是直接建议用hooks，useHistory()，即可在函数式组件中直接获取history信息
 
 ### Redirect
 `<Redirect from="/" to="/home"></Redirect>` 当访问“/”时，重定向到“/home”
@@ -1272,7 +1474,7 @@ export default animate
     }
   }, [])
 
-
+  // useEffect 不允许直接使用 async 函数。如果直接声明 async 函数，它会隐式返回一个 Promise，而 React 无法处理 Promise 作为清理函数，会导致潜在的内存泄漏或逻辑错误。
   function loadData () {
     fetch('url').then(res => res.json()).then(result => result)
   }
@@ -1337,12 +1539,19 @@ function App() {
 }
 ```
 
-* useCallback 记忆函数
+* useStore、useDispatch、useSelector（react-redux中的hooks）
+  * useStore。整个 store 对象，不会自动订阅更新。`const store = useStore().getState();`
+  * useSelector。selector 函数返回的特定状态，自动订阅状态变化并触发重新渲染。 `const count = useSelector(state => state.counter);`
+  * useDispatch。`const dispatch = useDispatch();` 可以直接用dispatch派发定义好的actionCreator（扁平化对象）
+
+
+* useCallback 记忆函数，保证函数的引用不变
 为了防止父组件刷新，导致子组件也刷新而导致的性能浪费。
 比如类组件中的render，父组件往下传递了一些props和函数。当父组件状态改变时，即使是和子组件不相关的状态，也会导致子组件重复渲染，同时每次render也会产生一次新地址的props和对应函数。
 当然可以将向子组件传的参数和函数，都抽离为一个对象。但函数式组件整个组件相当于都是render和class组件的语法糖。所以无论是否抽离出去，都会重复渲染。所以要使用useCallback
 具体去看react-markdown吧。
 它需要搭配React.memo使用，一般都是搭配函数式组件使用
+也有单独使用的时候，比如稳定的函数引用：需要保证函数引用稳定（如事件监听器的绑定/解绑）
 ```js
 import React, { useState, useCallback, memo } from 'react'
 
@@ -1509,5 +1718,3 @@ export default function Memoization() {
 }
 
 ```
-
-## gogocode

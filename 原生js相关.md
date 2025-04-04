@@ -114,6 +114,13 @@ let i =0
 do{
   console.log(i)
 }while(++i < 10)
+
+// while后也可以加逻辑，在循环结束后会执行一次
+do{
+  console.log(i)
+}while(++i < 10){
+  console.log('done')
+}
 ```
 
 # 函数
@@ -310,6 +317,40 @@ let KEY = Symbol()
 let obj = { [KEY]: 100 }
 console.log(obj[KEY]) 
 // 其他任何常量都无法访问到这个键值对。这个键名就这辈子都不会被覆盖
+```
+
+## 生成器函数
+* 定义生成器函数`function* abc() {}`或`function *abc() {}`或`function * abc() {}`
+* yield 类似断点。生成器函数执行后会返回一个生成器对象
+```js
+function *abc(a,b) {
+  yield a;
+  yield b;
+  a++;
+  yield a;
+  b+=10;
+  yield b;
+  return a+b
+}
+
+let a = abc(3,5) //生成器对象
+let obj = a.next() // {value:3, done: false}，value就是yield返回的结果，done就是生成器函数是否执行完成
+// 当4次next之后，将返回{value: 19, done: true}
+```
+* 遍历生成器函数
+```js do-while
+let a = abc(3,5);
+let obj;
+do{
+  obj = a.next();
+  console.log(obj)
+} while(!obj.done)
+```
+
+```js for-of
+for(let value of a){
+  console.log(value) // 只会执行到最后一次yield，最后一次return不会执行
+}
 ```
 
 # 类

@@ -707,7 +707,7 @@ const store = createStore(
   reducer,
   applyMiddleware(sagaMiddleware)
 )
-sagaMiddleware.run(helloSaga)
+sagaMiddleware.run(mySaga)
 
 export default store
 ```
@@ -872,6 +872,7 @@ react与immutable思想就类似，通过生成新的虚拟 DOM 树，与旧树�
 
 ### api
 * toJS() immutable对象可以转为js对象，递归转
+* fromJS() 递归转为immutable
 
 * Map.set(filed, value)  set无法修改原对象，一定返回一个新对象
   * let map1 = Map({x:0}); let mapcopy = map1; mapcopy.set(x, 100)是无法修改mapcopy的值的，修改完后通过mapcopy.get(x)依然为0
@@ -1628,7 +1629,12 @@ import React, { useRef, useEffect, useImperativeHandle, forwardRef } from "react
 
 function ChildInputComponent(props, ref) {
   const inputRef = useRef(null);
-  useImperativeHandle(ref, () => inputRef.current); // 将本组件中的inputRef和父组件中的ref绑定在一起
+  useImperativeHandle(ref, () => inputRef.current); // 将本组件中的inputRef和父组件中的ref绑定在一起。更直观的说法就是把子组件inputRef的Dom传递给了父组件，从而能在父组件直接调用focus
+  useImperativeHandle(ref, () => ({ // 这种写法相当于把后面这个对象暴漏给了父组件，父组件的inputRef.current就会多出一个test方法
+    test: () => {
+      console.log(1)
+    }
+  }))
   return <input type="text" name="child input" ref={inputRef} />;
 }
 
@@ -1718,3 +1724,9 @@ export default function Memoization() {
 }
 
 ```
+
+## react18相比16显著的变化
+1. 并发渲染： 支持可中断渲染，优先处理用户交互（如 useTransition 标记低优先级更新）。
+2. 自动批处理优化： 异步操作中的 setState 也会合并渲染。注意，并不是解决了异步渲染的问题，而是在异步函数中，若有两次更新状态的操作，react会整合为1次，只更新一次dom
+3. Hooks 增强： useId（生成唯一 ID），useTransition（标记低优先级更新（避免阻塞 UI）），useDeferredValue（延迟更新某个值（类似防抖））
+4. 服务端渲染（SSR）优化：流式传输 HTML，流式渲染和选择性注水，提升首屏性能。

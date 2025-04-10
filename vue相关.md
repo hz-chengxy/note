@@ -19,6 +19,30 @@ class="className" :class="'el-icon-'+item.icon"
 
 # vue的API
 
+## 插槽
+父组件使用子组件的传参
+```js 父 v-slot:name="params" 缩写 #name=""
+ <child>
+  <template v-slot:default="{title, childTitle}">
+    <div>
+      {{title}}
+      {{childTitle}}
+    </div>
+  </template>
+  <template v-slot:cont="{content}">
+    <div>
+      {{content}}
+    </div>
+  </template>
+</child>
+```
+
+```js 子 <slot :params="params">
+<slot :title="childTitle" :child-title="childTitle + '!!!'"></slot>  // => default
+
+<slot name="cont" :content="childContent" /> // => cont
+```
+
 ## vue事件阻止冒泡
 即子标签和父标签都添加了不同的事件，而触发了子标签的事件后冒泡到了父标签的事件，导致两个事件都触发，@click.stop = "clickHandler"，即在click添加修饰符即可，官方文档有提及。
 @click.stop : 阻止事件冒泡

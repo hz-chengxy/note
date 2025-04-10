@@ -1,8 +1,65 @@
 # 需要着重看的
-1、手写promise
-2、同异步执行函数顺序
-3、react
-4、requestAnimationFrame和虚拟滚动
+1. 垃圾回收机制
+2. 浏览器缓存机制（强缓存和协商缓存各有什么关键的配置参数）、浏览器渲染原理
+3. 防抖、节流，均已闭包的形式呈现
+```js
+// 防抖
+function unshake (fn, wait) {
+  let time = 0
+  return function (...arg) {
+    let now = Date.now()
+    if (now - time > wait) {
+      fn.apply(this, arg)
+      time = now
+    }
+  }
+}
+// 节流
+function debounce = (fn, wait) {
+  let timer = null
+  return function (...arg) {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+      fn.apply(this, arg)
+    }, wait)
+  }
+}
+```
+4. MVC与MVVM
+5. 虚拟DOM和diff算法
+6. vue3相对于vue2有哪些改进
+7. UDP与TCP
+8. 输入 URL 到页面渲染的整个流程
+9. 设计模式
+10. reserve重构`const reserve_self = arr => arr.reduce((value, item) => [item, ...value], [])`
+11. 柯里化
+```js
+function sum() {
+  return Array.from(arguments).reduce((value, item) => value+=item, 0)
+}
+function curry(fn) {
+  let arr = []
+  return function() {
+    if (arguments.length > 0) {
+      arr = arr.concat(Array.from(arguments))
+      return arguments.callee
+    } else {
+      return fn.apply(null, arr)
+    }
+  }
+}
+const currySum = curry(sum)
+console.log(currySum(1)(2,3)(4,5,6)())
+```
+12. 性能优化： 1、webpack按需异步加载。2.js太大导致首屏加载过慢。3.常规的防抖节流。4.雪碧图。5.懒加载（自定义指令）。6.cdn分布式负载均衡。
+13. rem：只根据根元素html。 em：fontsize是根据父元素，其他属性是根据当前元素的fontsize
+14. iframe传参与跨域问题解决。postMessage
+15. vue3的ref,reactive,toRef,toRefs。watch，watchEffect
+16. vue2升级vue3，api的变化
+17. tree-shaking是在打包阶段执行而不是运行阶段，它依赖于 ES Module 的静态语法（如 import/export），在构建阶段分析模块之间的依赖关系，标记未被使用的代码（Dead Code），并在最终生成的代码中移除它们。
+18. http和https的区别：HTTPS = HTTP + 加密 + 身份验证（需由受信任的证书颁发机构（CA）签发数字证书，验证服务器身份） + 数据完整性保护（SSL/TLS）。
+19. computed和watch的区别
+20. webpack的原理
 
 # 关于数据类型的
 * 原生JS的number类型是浮点类型，所以0.1+0.2 !== 0.3。
@@ -278,7 +335,7 @@ Function.prototype.myCall = function(context) {
   context.fn = this
   //如果该方法存在于一个对象的原型链上，那么this指向的是调用这个方法的对象
   const args = [...arguments].slice(1)
-  const result = context.fn(...args)
+  const result = context.fn(...args) // 此时修改了this，类比obj.method()，this绑定到了obj。此时this绑定到了context
   delete context.fn
   return result
 }
@@ -302,6 +359,29 @@ Function.prototype.myApply = function(context) {
 }
 ```
 ```js bind重构
+// 简单版
+Function.prototype.myBind = function(context, ...bindArgs) {
+  context = context || window
+  let originalFunc = this;
+  
+  return function(...callArgs) {
+    // 合并预先绑定的参数和调用时传入的参数
+    let combinedArgs = bindArgs.concat(callArgs);
+    
+    // 调用原函数，绑定 this 值
+    return originalFunc.apply(context, combinedArgs);
+  };
+};
+
+// 使用
+function greet(greeting, name) {
+  console.log(`${greeting}, ${name}!`);
+}
+
+const sayHello = greet.myBind(null, "Hello");
+sayHello("Alice"); // 输出 "Hello, Alice!"
+
+// 复杂版
 Function.prototype.myBind = function (context) {
   if (typeof this !== 'function') {
     throw new TypeError('Error')
@@ -384,12 +464,11 @@ outer - 冒泡阶段
 
 document.addEventListener('click', (e) => {
   e.stopPropagation() // 阻止冒泡和捕获。
-  // 若第二个参数为true，即捕获阶段执行，则可保证，除了这个回调，其他的捕获和冒泡均被阻断。除非触发回调的是这个回调的外层dom结构
+  // 若第三个参数为true，即捕获阶段执行，则可保证，除了这个回调，其他的捕获和冒泡均被阻断。除非触发回调的是这个回调的外层dom结构
 }, true)
 ```
 
 * 事件委托（事件广播）：如果一个节点中的子节点是动态生成的，那么子节点需要注册事件的话应该注册在父节点上。优点：节省内存，不需要给子节点注销事件。
-* 之前的误区：事件捕获与事件冒泡在第三个参数中的区别主要体现在触发时间段上。而不是如果参数为false(冒泡)，就无法捕获式的从上而下的广播事件，反之true(捕获)亦然。
 * 跨域：因为浏览器出于安全考虑，有同源策略。也就是说，如果协议、域名或者端口有一个不同就是跨域，Ajax 请求会失败。
 * 解决跨域方式：
    * jsonp：利用 script 标签没有跨域限制的漏洞，通过 script 标签指向一个需要访问的地址并提供一个回调函数来接收数据。其兼容性不错，但只限于get请求。
@@ -422,12 +501,12 @@ deepseek的解释：
         * Expires：指定资源的过期时间（HTTP/1.0）。
         * Cache-Control：更灵活，常用指令有：
           * max-age：资源有效期（秒）。
-          * no-cache：需验证资源是否过期。
+          * no-cache：仅使用协商缓存。
           * no-store：禁止缓存。
           * public：允许所有用户缓存。
           * private：仅允许特定用户缓存。
     * 协商缓存：当强缓存失效后，浏览器向服务器验证资源是否更新。
-      * HTTP Header:
+      * HTTP Header: （前面参数为服务器返回，后面为客户端向服务端发送的参数）
         * Last-Modified / If-Modified-Since：基于资源修改时间。
         * ETag / If-None-Match：基于资源唯一标识。
 
@@ -625,7 +704,7 @@ debounce(fn,delayTime){
    * resolve.alias：可以通过别名的方式来映射一个路径，能让 Webpack 更快找到路径。
 * 减少webpack打包后的文件体积
    * 按需加载：将每个路由页面单独打包为一个文件，加载的文件体积就会变小。当然不仅仅路由可以按需加载，对于 loadash 这种大型类库同样可以使用这个功能。其底层的机制为：当使用的时候再去下载对应文件，返回一个 Promise，当 Promise 成功以后去执行回调。
-   * tree shakin：Tree Shaking 可以实现删除项目中未被引用的代码
+   * tree shaking：Tree Shaking 可以实现删除项目中未被引用的代码
 # MVVM 与 MVC
 * react和vue都不是MVVM框架，都只是借鉴其思路。
 <!-- * View ：用户看到的视图。
@@ -791,7 +870,7 @@ React 的 Diff 算法是基于 递归比较 的策略，并结合 Fiber 架构�
 
 # Vue进阶知识点
 * Vue2内部使用了Object.defineProperty()来实现数据响应式，通过这个函数可以监听到 set 和 get 的事件。
-* Vue 组件挂载时添加响应式的过程：在组件挂载时，会先对所有需要的属性调用Object.defineProperty()，然后实例化Watcher，传入组件更新的回调。在实例化过程中，会对模板中的属性进行求值，触发依赖收集。
+* Vue 组件挂载时添加响应式的过程：在组件挂载时，会先对所有需要的属性调用Object.defineProperty()，在get中收集依赖，在set中通知更新。然后实例化Watcher，watcher在创建时会调用一次getter，完成依赖收集。
 * Object.defineProperty 的缺陷：通过下标方式修改数组数据或者给对象新增属性并不会触发组件的重新渲染，因为 Object.defineProperty 不能拦截到这些操作，更精确的来说，对于数组而言，大部分操作都是拦截不到的，只是 Vue 内部通过重写函数($set的本质也是splice触发派发更新)的方式解决了这个问题。
 * AST：AST抽象语法树，通过抽象语法树解析，我们可以像童年时拆解玩具一样，透视Javascript这台机器的运转，并且重新按着你的意愿来组装。全称abstract syntax code，是源代码的抽象语法结构的树状表示，树上的每个节点都表示源代码中的一种结构，这所以说是抽象的，是因为抽象语法树并不会表示出真实语法出现的每一个细节。
 * 模板是怎么在浏览器中运行的：Vue 会通过编译器将模板通过几个阶段最终编译为 render 函数，然后通过执行 render 函数生成 Virtual DOM 最终映射为真实 DOM。
@@ -880,7 +959,7 @@ this.$route.params.id; // 123
   3. nextTick 回调：在 Watcher 更新完成后，Vue 会执行通过 nextTick 注册的回调函数，确保这些回调在 DOM 更新后执行。
 
 # gulp，webpack，vite
-* gulp是工具链，构建工具。可以利用插件处理html,css，js等文件，并且可以压缩为一行，强调的是前端开发的工作流程，通过一系列task配置(例如处理文件压缩，雪碧图等)，定义执行顺序，总体来看，他是基于流的自动化构建工具。
+* gulp是工具链，流式构建工具，专注于文件处理。可以利用插件处理html,css，js等文件，并且可以压缩为一行，强调的是前端开发的工作流程，通过一系列task配置(例如处理文件压缩，雪碧图等)，定义执行顺序，总体来看，他是基于流的自动化构建工具。
 * webpack是打包工具，可以把项目的各种js文件、css文件合并成一个文件或多个文件，它的思想是万物皆为模块，他能够将各个模块按需加载，不会导致加载无用冗余的模块。
 * vite和webpack一样是打包工具，但它更快，因为它启动的时候不会打包。当浏览器请求对应模块时，才会对模块进行编译，这种按需加载，极大缩短了编译时间
 * webpack是先打包再启动开发服务器，vite是直接启动开发服务器，然后按需编译依赖文件。
@@ -1114,3 +1193,151 @@ https://juejin.cn/post/7370630910071373874
 # websocket
 
 # commonJS规范的require 和es6的import 区别在哪
+特性	require (CommonJS)	import (ES6)
+加载时机	运行时动态加载	编译时静态解析
+动态导入	直接支持（require）	需用 import()
+导出方式	module.exports/exports	export/export default
+导入方式	返回整个对象	可解构或默认导入
+值传递	值拷贝（基本类型）	值引用（动态绑定）
+环境支持	Node.js 原生	需配置（Node.js ≥ v12）
+
+# iframe传参与跨域问题解决
+1. 通过storage事件解决
+2. postMessage
+```js 父页面传参
+<iframe id="childFrame" src="https://child-domain.com/child.html"></iframe>
+
+<script>
+  const iframe = document.getElementById('childFrame');
+  
+  // 等待iframe加载完成
+  iframe.onload = function() {
+    // 向子窗口发送消息
+    // 参数1: 要发送的数据
+    // 参数2: 目标窗口的origin（安全限制）
+    iframe.contentWindow.postMessage({
+      type: 'greeting',
+      message: 'Hello from parent!'
+    }, 'https://child-domain.com');
+  };
+</script>
+```
+
+```js 子页面接收
+<script>
+  // 监听message事件
+  window.addEventListener('message', function(event) {
+    // 重要：验证消息来源
+    if (event.origin !== 'https://parent-domain.com') return;
+    
+    console.log('Received message:', event.data);
+    
+    // 处理特定类型的消息
+    if (event.data.type === 'greeting') {
+      // 向父窗口发送回复
+      window.parent.postMessage({
+        type: 'response',
+        message: 'Hello back from child!'
+      }, 'https://parent-domain.com');
+    }
+  });
+</script>
+```
+
+```js 父页面接收iframe回复
+// 父页面
+window.addEventListener('message', function(event) {
+  // 验证来源
+  if (event.origin !== 'https://child-domain.com') return;
+  
+  // 处理回复
+  if (event.data.type === 'response') {
+    console.log('Child replied:', event.data.message);
+  }
+});
+```
+
+# vue2升级vue3，api的变化
+生命周期的变化。beforeDestroy → beforeUnmount、destroyed → unmounted
+将 $listeners 替换为 $attrs
+具名插槽的定义（slot="xxx" → v-slot:xxx）
+作用域插槽子向父传参的时候，`<slot name="name" />`  父只能用`<template v-slot="props">`去接收这个props.name，不能用slot-scope。（这个应该是在vue2的后期版本就这么改了）
+v-model → v-model:value
+删除指令$children、$set、$delete、filters
+自定义指令，生命周期的变化
+```js
+// Vue2
+Vue.directive('focus', {
+  bind(el, binding) { /* ... */ },      // → beforeMount
+  inserted(el) { el.focus(); },         // → mounted
+  unbind() { /* 清理逻辑 */ }           // → unmounted
+});
+
+// Vue3
+app.directive('focus', {
+  beforeMount(el, binding) { /* ... */ },
+  mounted(el) { el.focus(); },
+  unmounted() { /* 清理逻辑 */ }
+});
+```
+
+# vue3的ref,reactive,toRef,toRefs。watch，watchEffect
+ref：基本类型或对象，用 .value 访问。
+reactive：复杂对象，直接访问属性。
+toRef：关联 reactive 的单个属性到 ref。
+toRefs：解构 reactive 对象时保持响应性。
+
+watch与watchEffect
+
+场景	                          推荐 API	      原因
+需要监听特定数据的变化	          watch	          精确控制监听源
+需要新旧值对比	                 watch	        提供 newVal 和 oldVal
+初始化时立即执行的副作用	        watchEffect	    默认立即执行
+依赖关系动态变化（如多个变量组合）	watchEffect	    自动追踪依赖，减少手动维护
+需要手动停止监听	                两者均可	      均返回停止函数
+
+优先用 watchEffect：
+当逻辑简单、依赖明确且需要立即执行时（如 80% 的副作用场景）。
+```js
+// 自动追踪函数内的响应式依赖
+watchEffect(() => {
+  console.log('count 的值是:', count.value) // 自动追踪 count
+})
+
+// 异步示例
+watchEffect(async () => {
+  const response = await fetch(`/api/data?id=${count.value}`)
+  // 自动依赖 count.value
+})
+```
+
+改用 watch：
+当需要精确控制监听源、对比新旧值或避免不必要的触发时。
+
+# computed和watch的区别
+1. 设计目的不同：
+computed：用于声明式地描述依赖数据的派生值（计算属性）
+watch：用于观察和响应数据变化，执行副作用操作
+
+2. 缓存机制
+computed：具有缓存，只有依赖的响应式数据变化时才会重新计算
+watch：无缓存，每次变化都会执行回调函数
+
+3. 返回值
+computed：必须返回一个值
+watch：不需要返回值，主要用于执行操作
+
+4. 异步操作
+computed：不能包含异步操作
+watch：可以执行异步操作
+
+# element与ant-design的坑点
+* element
+  1. 轮播图问题。首先多了一定会很卡，需要手动写翻页逻辑。其次若采用v-for图片数据遍历的图片，首次渲染图片会出来的特别慢，只有通过遍历数字才会特别快，或在el-carousel加个v-if
+  2. 样式穿透很不方便
+  3. 表格行合并后，斑马纹有问题，只能自定义斑马纹样式
+  4. vue3的那个虚拟列表，也很难用，不如自定义指令懒加载。带输入筛选的框，有很大问题，首选你无法将你输入的自定义新选项选中，其次解决了这个之后。选中了一个选项后，再次聚焦这个选框，无法根据之前的选项继续删除或输入文字，一定会清空输入框，必须从头开始输
+* ant-design
+  1. Ant Design Form 的校验规则在初次渲染时会被缓存，直接修改 rules 不会触发内部校验器的更新。必须通过 主动调用表单方法（如 validateFields）或 强制重置校验状态 来解决。
+
+# 浏览器兼容性

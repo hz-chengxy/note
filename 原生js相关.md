@@ -435,6 +435,12 @@ result.then(res => console.log(res)) // 'b'
 使用 --save (-S) 安装的包是项目发布之后还需要依赖的包 ， 如axiox , express等包，等项目上线以后还需使用。 会打入dependencies
 使用 --save-dev （-D） 安装的包则是开发时依赖的包，等项目上线则不会使。如项目中使用的 gulp , 压缩css、js 的模块等在项目上线后则不会使用。会打入devDependencies
 
+- npm view vue versions
+- ^: 锁定主版本号
+- ~: 锁定次版本号
+- *: 固定版本
+- 无：安装最高版本
+
 # AJAX
 * AJAX如果你连续快速发了多次请求，它只会将最后一次请求返回
 * 跨域也分为“消息头”跨域和“消息体“跨域
@@ -499,7 +505,7 @@ document.body.appendChild(script);
 * 如果仅有get，没有set，这个属性就是一个只读属性
 ```js es6可以通过只设置get来定义常量
 class Box{
-// static  const EVENT_ID="Event_Id"; es6没有const
+// static  const EVENT_ID="Event_Id"; 对象中不能使用const
   constructor(){
     this.check = !this.check // 内部改也会触发set
   }
